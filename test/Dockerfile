@@ -1,0 +1,1 @@
+FROM apache/apisix:2.6-alpine
