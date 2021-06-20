@@ -1,0 +1,2 @@
+ext-plugin:
+  cmd: ["/usr/local/apisix/javascript-plugin-runner/bin/runner", "/usr/local/apisix/javascript-plugin-runner/examples/logger.js"]
