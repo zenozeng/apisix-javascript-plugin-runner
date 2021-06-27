@@ -4,7 +4,13 @@
   "description": "Node.js / Deno / WASM Plugin Runner for APISIX",
   "main": "index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest"
+  },
+  "jest": {
+    "testPathIgnorePatterns": ["src"],
+    "roots": ["./src", "./dist"]
   },
   "repository": {
     "type": "git",
@@ -18,6 +24,9 @@
   "homepage": "https://github.com/zenozeng/apisix-javascript-plugin-runner#readme",
   "devDependencies": {
     "@types/node": "^15.12.4",
+    "@types/node-fetch": "^2.5.10",
+    "jest": "^27.0.5",
+    "node-fetch": "^2.6.1",
     "typescript": "^4.3.4"
   }
 }

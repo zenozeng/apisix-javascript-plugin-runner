@@ -1,4 +1,4 @@
-FROM apache/apisix:2.6-alpine
+FROM apache/apisix:2.7-alpine
 
 # Etcd
 ARG ETCD_VERSION=v3.4.14
@@ -12,9 +12,6 @@ COPY --from=apisix-javascript-plugin-runner:latest /usr/local/lib/node_modules /
 COPY --from=apisix-javascript-plugin-runner:latest /usr/local/bin/node /usr/local/bin/node
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm; \
     ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx;
-
-# APISIX JavaScript Plugin Runner
-COPY --from=apisix-javascript-plugin-runner:latest /usr/local/apisix/javascript-plugin-runner/ /usr/local/apisix/javascript-plugin-runner/
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
