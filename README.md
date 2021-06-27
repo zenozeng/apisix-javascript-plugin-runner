@@ -2,9 +2,12 @@
 
 Node.js / Deno / WASM Plugin Runner for APISIX (WIP)
 
-- [ ] Node.js (WIP)
+- [ ] Node.js (DOING)
+- [ ] Add [docs for APISIX ext-plugin](./docs/protocol.md) (DOING)
 - [ ] Deno (TODO)
 - [ ] WASM (TODO)
+- [ ] WASM Example (Golang) (TODO)
+- [ ] WASM Example (Rust) (TODO)
 
 ## Development
 
