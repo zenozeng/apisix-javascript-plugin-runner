@@ -9,8 +9,13 @@
     "test": "jest"
   },
   "jest": {
-    "testPathIgnorePatterns": ["src"],
-    "roots": ["./src", "./dist"]
+    "testPathIgnorePatterns": [
+      "src"
+    ],
+    "roots": [
+      "./src",
+      "./dist"
+    ]
   },
   "repository": {
     "type": "git",
@@ -28,5 +33,8 @@
     "jest": "^27.0.5",
     "node-fetch": "^2.6.1",
     "typescript": "^4.3.4"
+  },
+  "dependencies": {
+    "flatbuffers": "^2.0.3"
   }
 }
