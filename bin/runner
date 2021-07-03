@@ -1,4 +1,4 @@
 #!/bin/bash
 
 DIST_DIR=$(dirname $0)/../dist
-node $DIST_DIR/main/node.js
+node $DIST_DIR/server/node.js $@

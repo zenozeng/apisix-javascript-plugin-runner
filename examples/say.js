@@ -8,7 +8,7 @@ class SayPlugin {
         return "say"
     }
 
-    parseConf() {
+    parseConf(conf) {
 
     }
 
@@ -18,4 +18,4 @@ class SayPlugin {
 
 }
 
-export default SayPlugin
+module.exports = SayPlugin

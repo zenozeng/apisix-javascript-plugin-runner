@@ -7,9 +7,9 @@ RUN wget https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-
     && ln -s etcd-${ETCD_VERSION}-linux-amd64 etcd
 
 # Node.js
-COPY --from=apisix-javascript-plugin-runner:latest /usr/local/include/node /usr/local/include/node
-COPY --from=apisix-javascript-plugin-runner:latest /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=apisix-javascript-plugin-runner:latest /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:16.3.0-alpine /usr/local/include/node /usr/local/include/node
+COPY --from=node:16.3.0-alpine /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node:16.3.0-alpine /usr/local/bin/node /usr/local/bin/node
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm; \
     ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx;
 
