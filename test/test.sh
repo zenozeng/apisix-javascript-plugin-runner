@@ -9,7 +9,7 @@ docker rm -f $CONTAINER_NAME
 set -ex
 
 docker build -t $DOCKER_IMAGE $PROJECT_ROOT/test
-docker run -it \
+docker run \
     --name $CONTAINER_NAME \
     -p 9180:9180 \
     -p 9080:9080 \
