@@ -8,14 +8,18 @@
     "watch": "tsc -w",
     "test": "jest"
   },
+  "nyc": {
+    "extends": "@istanbuljs/nyc-config-typescript",
+    "all": true,
+    "exclude": ["src/ext-plugin"]
+  },
   "jest": {
-    "testPathIgnorePatterns": [
-      "src"
-    ],
     "roots": [
-      "./src",
-      "./dist"
-    ]
+      "./src"
+    ],
+    "transform": {
+      ".ts": "ts-jest"
+    }
   },
   "repository": {
     "type": "git",
@@ -28,10 +32,15 @@
   },
   "homepage": "https://github.com/zenozeng/apisix-javascript-plugin-runner#readme",
   "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/node": "^15.12.4",
     "@types/node-fetch": "^2.5.10",
     "jest": "^27.0.5",
     "node-fetch": "^2.6.1",
+    "nyc": "^15.1.0",
+    "source-map-support": "^0.5.19",
+    "ts-jest": "^27.0.3",
+    "ts-node": "^10.0.0",
     "typescript": "^4.3.4"
   },
   "dependencies": {

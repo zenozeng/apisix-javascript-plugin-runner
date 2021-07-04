@@ -14,4 +14,4 @@ docker run \
     -p 9180:9180 \
     -p 9080:9080 \
     -v $PROJECT_ROOT:/usr/local/apisix/javascript-plugin-runner \
-    $DOCKER_IMAGE
+    $DOCKER_IMAGE $@

@@ -14,6 +14,8 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm; \
     ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx;
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY coverage-entrypoint.sh /usr/local/bin/coverage-entrypoint.sh
 
 COPY config.yaml /usr/local/apisix/conf/config.yaml
-CMD ["sh", "/usr/local/bin/entrypoint.sh"]
+COPY coverage-config.yaml /usr/local/apisix/conf/coverage-config.yaml
+CMD ["bash", "/usr/local/bin/entrypoint.sh"]

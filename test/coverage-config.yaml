@@ -1,0 +1,17 @@
+ext-plugin:
+  cmd: 
+    - "node"
+    - "/usr/local/apisix/javascript-plugin-runner/instrument/server/node.js"
+    - "/usr/local/apisix/javascript-plugin-runner/examples/say.js"
+    - "/usr/local/apisix/javascript-plugin-runner/examples/rewrite.js"
+
+apisix:
+  allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+    - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
+  port_admin: 9180              # use a separate port
+
+  admin_key:
+    -
+      name: "admin"
+      key: 196e3a4c-ad0d-4a4f-954a-285678b74a24
+      role: admin

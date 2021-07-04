@@ -14,3 +14,7 @@ dev:
 .PHONY: test
 test:
 	bash test/test.sh
+
+.PHONY: coverage
+coverage:
+	bash test/test.sh bash /usr/local/bin/coverage-entrypoint.sh

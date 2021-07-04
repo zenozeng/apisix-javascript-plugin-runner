@@ -1,10 +1,10 @@
 {
     "compilerOptions": {
       "module": "commonjs",
+      "inlineSourceMap": true,
       "noImplicitAny": true,
       "removeComments": true,
       "preserveConstEnums": true,
-      "sourceMap": true,
       "outDir": "dist",
       "target": "ES6"
     },
