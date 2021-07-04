@@ -12,3 +12,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+class RewritePlugin {
+
+    getName() {
+        return "rewrite"
+    }
+
+    parseConf(conf) {
+        return JSON.parse(conf)
+    }
+
+    async filter(conf, request, response) {
+        request.headers.set('X-Req-A6-JavaScript-Plugin', 'Rewrite')
+        request.headers.set('X-Req-A6-JavaScript-Rewrite-Example', conf.header)
+        request.path = conf.path
+        request.args.set('hello', 'world')
+    }
+
+}
+
+module.exports = RewritePlugin

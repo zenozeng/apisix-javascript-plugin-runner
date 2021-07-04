@@ -5,7 +5,8 @@
       "removeComments": true,
       "preserveConstEnums": true,
       "sourceMap": true,
-      "outDir": "dist"
+      "outDir": "dist",
+      "target": "ES6"
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", "src/main/deno.ts"]

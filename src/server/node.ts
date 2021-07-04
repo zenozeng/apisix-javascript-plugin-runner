@@ -1,3 +1,18 @@
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import * as net from 'net'
 import * as fs from 'fs'
 import RPCServer from './rpc'
@@ -18,6 +33,7 @@ args.forEach((path) => {
     }
 })
 
+let connCount = -1
 const server = net.createServer((conn) => {
     console.log(`Client connected`)
     let receivedBytes = 0
@@ -25,9 +41,17 @@ const server = net.createServer((conn) => {
     let ty: number = null
     let buf = Buffer.alloc(0)
     let done = false
+    connCount++
+    let connId = connCount
     conn.on('data', async (d: Buffer) => {
+        console.debug(`Conn#${connId}: receive data: ${d.length} bytes`)
         if (done) {
-            return
+            // new data package received, reinit
+            receivedBytes = 0
+            dataLength = null
+            ty = null
+            buf = Buffer.alloc(0)
+            done = false
         }
         if (dataLength === null) {
             buf = Buffer.concat([buf, d])
@@ -42,7 +66,7 @@ const server = net.createServer((conn) => {
                 const new_buf = Buffer.alloc(dataLength)
                 buf.copy(new_buf, 0, HEADER_LEN)
                 buf = new_buf
-                console.log(`Header parsed: `, {ty, dataLength})
+                console.debug(`Conn#${connId} rpc header: `, {ty, dataLength})
             }
         }
         if (dataLength !== null && receivedBytes >= HEADER_LEN + dataLength) {
@@ -59,8 +83,8 @@ const server = net.createServer((conn) => {
         }
     })
 
-    conn.on('end', () => {
-        console.log(`conn end`)
+    conn.on('close', () => {
+        console.debug(`Connection closed`)
     })
 
     conn.on('error', (err) => {
