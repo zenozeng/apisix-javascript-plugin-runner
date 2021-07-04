@@ -43,7 +43,6 @@ class SayPlugin {
     }
 
     parseConf(conf) {
-        conf = conf || '{"body": "example"}'
         return JSON.parse(conf)
     }
 
@@ -57,6 +56,30 @@ class SayPlugin {
 }
 
 module.exports = SayPlugin
+```
+
+### route
+
+```typescript
+let resp = await fetch(`${APISIX_ADMIN_ENDPOINT}/routes/1`, {
+    method: 'PUT',
+    headers: {
+        'X-API-KEY': APISIX_ADMIN_TOKEN
+    },
+    body: JSON.stringify({
+        "uri": "/say",
+        "remote_addrs": ["127.0.0.0/8"],
+        "methods": ["PUT", "GET"],
+        "plugins": {
+            "ext-plugin-pre-req": {
+                "conf" : [
+                    {"name": "say", "value": "{\"body\":\"123\"}"}
+                ]
+            }
+        },
+    })
+})
+expect(resp.status).toBe(201)
 ```
 
 ## Development
