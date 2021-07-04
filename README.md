@@ -1,5 +1,7 @@
 # apisix-javascript-plugin-runner
 
+[Coverage Report](https://zenozeng.github.io/apisix-javascript-plugin-runner/coverage/)
+
 Node.js / Deno / WASM Plugin Runner for APISIX (WIP)
 
 - [x] Node.js
@@ -8,6 +10,54 @@ Node.js / Deno / WASM Plugin Runner for APISIX (WIP)
 - [ ] WASM (TODO)
 - [ ] WASM Example (Golang) (TODO)
 - [ ] WASM Example (Rust) (TODO)
+
+## Example
+
+### config.yaml
+
+```yaml
+ext-plugin:
+  cmd: 
+    - "/usr/local/apisix/javascript-plugin-runner/bin/runner"
+    - "/usr/local/apisix/javascript-plugin-runner/examples/say.js"
+
+apisix:
+  allow_admin:
+    - 127.0.0.0/24
+  port_admin: 9180
+
+  admin_key:
+    -
+      name: "admin"
+      key: YOUR_ADMIN_KEY
+      role: admin
+```
+
+### examples/say.js
+
+```typescript
+class SayPlugin {
+
+    getName() {
+        return "say"
+    }
+
+    parseConf(conf) {
+        conf = conf || '{"body": "example"}'
+        return JSON.parse(conf)
+    }
+
+    async filter(conf, request, response) {
+        const headers = new Map()
+        headers.set('X-Resp-A6-JavaScript-Plugin', 'Say')
+        response.body = conf.body
+        response.headers = headers
+    }
+
+}
+
+module.exports = SayPlugin
+```
 
 ## Development
 
