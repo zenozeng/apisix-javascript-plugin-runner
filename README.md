@@ -29,6 +29,7 @@ docker run -d --name etcd \
 # APISIX (with JavaScript Plugin Runner)
 docker run -it --name apisix \
     -v `pwd`/examples/config.yaml:/usr/local/apisix/conf/config.yaml \
+    -v `pwd`/examples:/usr/local/apisix/javascript-plugin-runner/examples \
     -p 9080:9080 \
     -p 127.0.0.1:9180:9180 \
     -p 9443:9443 \
