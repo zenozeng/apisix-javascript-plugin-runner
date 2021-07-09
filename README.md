@@ -45,11 +45,10 @@ ext-plugin:
 
 apisix:
   port_admin: 9180
-
   admin_key:
     -
       name: "admin"
-      key: be35378d-f3be-4268-9137-00fdbdc803ae
+      key: "YOUR_ADMIN_KEY"
       role: admin
 
 etcd:
