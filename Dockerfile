@@ -34,8 +34,6 @@ RUN apk add --no-cache \
         libstdc++ \
     && apk add --no-cache --virtual .build-deps \
         curl \
-    && echo "Building from source" \
-    # backup build
     && apk add --no-cache --virtual .build-deps-full \
         binutils-gold \
         g++ \
@@ -74,11 +72,11 @@ RUN apk add --no-cache \
     && apk del .build-deps-full \
     && cd .. \
     && rm -Rf "node-v$NODE_VERSION" \
-    && rm "node-v$NODE_VERSION.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt; \
-  && apk del .build-deps \
-  # smoke tests
-  && node --version \
-  && npm --version
+    && rm "node-v$NODE_VERSION.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt \
+    && apk del .build-deps \
+    # smoke tests
+    && node --version \
+    && npm --version
 
 # APISIX JavaScript Plugin Runner
 COPY --from=builder /usr/local/apisix/javascript-plugin-runner /usr/local/apisix/javascript-plugin-runner
