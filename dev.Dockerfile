@@ -1,4 +1,4 @@
-FROM debian:sid-20210621
+FROM debian:buster-20210621
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
