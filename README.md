@@ -4,7 +4,10 @@
 
 Node.js / Deno / WASM Plugin Runner for APISIX (WIP)
 
+## Roadmap
+
 - [x] Node.js
+- [x] Docker Image
 - [ ] Add [docs for APISIX ext-plugin](./docs/protocol.md) (DOING)
 - [ ] Deno (TODO)
 - [ ] WASM (TODO)
@@ -19,7 +22,7 @@ Node.js / Deno / WASM Plugin Runner for APISIX (WIP)
 # Create APISIX Network
 docker network create apisix
 # Etcd
-docker run -d --name etcd-server \
+docker run -d --name etcd \
     --network apisix \
     --env ALLOW_NONE_AUTHENTICATION=yes \
     bitnami/etcd:3.4.9
@@ -97,27 +100,10 @@ curl -H "Content-Type: application/json" \
 #### Test Output
 
 ```bash
-curl http://127.0.0.1:9080/say
+curl -v http://127.0.0.1:9080/say
 ```
 
-## Development
-
-- server
-    - node.ts: entrypoint for Node.js (Net server listening on `process.env.APISIX_LISTEN_ADDRESS`)
-    - rpc.ts: flatbuffers rpc `dispatch(ty: number, input: Uint8Array): Uint8Array`
-- runner
-    - index.ts: Plugin runner
-- ext-plugin
-- test
-    - integration.test.ts
-
-```bash
-npm install
-make build
-make test
-```
-
-## Types
+## Interface
 
 ```typescript
 interface Plugin {
@@ -168,6 +154,23 @@ interface Response {
     // The body of the response
     body?: Uint8Array | string;
 }
+```
+
+## Development
+
+- server
+    - node.ts: entrypoint for Node.js (Net server listening on `process.env.APISIX_LISTEN_ADDRESS`)
+    - rpc.ts: flatbuffers rpc `dispatch(ty: number, input: Uint8Array): Uint8Array`
+- runner
+    - index.ts: Plugin runner
+- ext-plugin
+- test
+    - integration.test.ts
+
+```bash
+npm install
+make build
+make test
 ```
 
 ## References
