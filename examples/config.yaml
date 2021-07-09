@@ -1,0 +1,16 @@
+ext-plugin:
+  cmd: 
+    - "/usr/local/apisix/javascript-plugin-runner/bin/runner"
+    - "/usr/local/apisix/javascript-plugin-runner/examples/say.js"
+
+apisix:
+  port_admin: 9180
+  admin_key:
+    -
+      name: "admin"
+      key: "YOUR_ADMIN_KEY"
+      role: admin
+
+etcd:
+  host:
+    - "http://etcd:2379"

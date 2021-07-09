@@ -27,8 +27,8 @@ docker run -d --name etcd \
     --env ALLOW_NONE_AUTHENTICATION=yes \
     bitnami/etcd:3.4.9
 # APISIX (with JavaScript Plugin Runner)
-docker run -it \
-    -v `pwd`/config.yaml:/usr/local/apisix/conf/config.yaml \
+docker run -it --name apisix \
+    -v `pwd`/examples/config.yaml:/usr/local/apisix/conf/config.yaml \
     -p 9080:9080 \
     -p 127.0.0.1:9180:9180 \
     -p 9443:9443 \
@@ -37,7 +37,7 @@ docker run -it \
 ```
 
 ```yaml
-# config.yaml
+# examples/config.yaml
 ext-plugin:
   cmd: 
     - "/usr/local/apisix/javascript-plugin-runner/bin/runner"
@@ -49,7 +49,7 @@ apisix:
   admin_key:
     -
       name: "admin"
-      key: YOUR_ADMIN_KEY
+      key: be35378d-f3be-4268-9137-00fdbdc803ae
       role: admin
 
 etcd:
@@ -90,10 +90,11 @@ module.exports = SayPlugin
 #### Create route
 
 ```bash
-curl -H "Content-Type: application/json" \
+# default config.apisix.allow_admin is 127.0.0.0/24, using docker exec
+docker exec -it apisix curl -H "Content-Type: application/json" \
     -H 'X-API-KEY: YOUR_ADMIN_KEY' \
-    --request PUT \
-    --data '{"uri":"/say","remote_addrs":["127.0.0.0/8"],"methods":["PUT","GET"],"plugins":{"ext-plugin-pre-req":{"conf":[{"name":"say","value":"{\\"body\\":\\"123\\"}"}]}}}' \
+    -X PUT \
+    --data '{"uri":"/say","methods":["PUT","GET"],"plugins":{"ext-plugin-pre-req":{"conf":[{"name":"say","value":"{\"body\":\"123\"}"}]}}}' \
     http://127.0.0.1:9180/apisix/admin/routes/1
 ```
 
@@ -101,6 +102,19 @@ curl -H "Content-Type: application/json" \
 
 ```bash
 curl -v http://127.0.0.1:9080/say
+```
+
+```
+< HTTP/1.1 200 OK
+< Date: Fri, 09 Jul 2021 18:20:24 GMT
+< Content-Type: text/plain; charset=utf-8
+< Transfer-Encoding: chunked
+< Connection: keep-alive
+< X-Resp-A6-JavaScript-Plugin: Say
+< Server: APISIX/2.7
+< 
+* Connection #0 to host 127.0.0.1 left intact
+123
 ```
 
 ## Interface
