@@ -18,3 +18,7 @@ test:
 .PHONY: coverage
 coverage:
 	bash test/test.sh bash /usr/local/bin/coverage-entrypoint.sh
+
+.PHONY: docker-test
+docker-test:
+	docker build -t apisix-javascript-plugin-runner .

@@ -24,6 +24,7 @@ class SayPlugin {
         return JSON.parse(conf)
     }
 
+    // Filter will be executed on every request with the say plugin configured.
     async filter(conf, request, response) {
         const headers = new Map()
         headers.set('X-Resp-A6-JavaScript-Plugin', 'Say')

@@ -11,19 +11,36 @@ Node.js / Deno / WASM Plugin Runner for APISIX (WIP)
 - [ ] WASM Example (Golang) (TODO)
 - [ ] WASM Example (Rust) (TODO)
 
-## Example
+## Getting Started
 
-### config.yaml
+### Installation
+
+```bash
+# Create APISIX Network
+docker network create apisix
+# Etcd
+docker run -d --name etcd-server \
+    --network apisix \
+    --env ALLOW_NONE_AUTHENTICATION=yes \
+    bitnami/etcd:3.4.9
+# APISIX (with JavaScript Plugin Runner)
+docker run -it \
+    -v `pwd`/config.yaml:/usr/local/apisix/conf/config.yaml \
+    -p 9080:9080 \
+    -p 127.0.0.1:9180:9180 \
+    -p 9443:9443 \
+    --network apisix \
+    zenozeng/apisix-javascript-plugin-runner
+```
 
 ```yaml
+# config.yaml
 ext-plugin:
   cmd: 
     - "/usr/local/apisix/javascript-plugin-runner/bin/runner"
     - "/usr/local/apisix/javascript-plugin-runner/examples/say.js"
 
 apisix:
-  allow_admin:
-    - 127.0.0.0/24
   port_admin: 9180
 
   admin_key:
@@ -31,11 +48,19 @@ apisix:
       name: "admin"
       key: YOUR_ADMIN_KEY
       role: admin
+
+etcd:
+  host:
+    - "http://etcd:2379"
 ```
 
-### examples/say.js
+Note: Docker images are provided for convenience. Recommended usage is always to build the source.
 
-```typescript
+### Plugin Example
+
+#### examples/say.js
+
+```javascript
 class SayPlugin {
 
     getName() {
@@ -46,6 +71,7 @@ class SayPlugin {
         return JSON.parse(conf)
     }
 
+    // Filter will be executed on every request with the say plugin configured.
     async filter(conf, request, response) {
         const headers = new Map()
         headers.set('X-Resp-A6-JavaScript-Plugin', 'Say')
@@ -58,28 +84,20 @@ class SayPlugin {
 module.exports = SayPlugin
 ```
 
-### route
+#### Create route
 
-```typescript
-let resp = await fetch(`${APISIX_ADMIN_ENDPOINT}/routes/1`, {
-    method: 'PUT',
-    headers: {
-        'X-API-KEY': APISIX_ADMIN_TOKEN
-    },
-    body: JSON.stringify({
-        "uri": "/say",
-        "remote_addrs": ["127.0.0.0/8"],
-        "methods": ["PUT", "GET"],
-        "plugins": {
-            "ext-plugin-pre-req": {
-                "conf" : [
-                    {"name": "say", "value": "{\"body\":\"123\"}"}
-                ]
-            }
-        },
-    })
-})
-expect(resp.status).toBe(201)
+```bash
+curl -H "Content-Type: application/json" \
+    -H 'X-API-KEY: YOUR_ADMIN_KEY' \
+    --request PUT \
+    --data '{"uri":"/say","remote_addrs":["127.0.0.0/8"],"methods":["PUT","GET"],"plugins":{"ext-plugin-pre-req":{"conf":[{"name":"say","value":"{\\"body\\":\\"123\\"}"}]}}}' \
+    http://127.0.0.1:9180/apisix/admin/routes/1
+```
+
+#### Test Output
+
+```bash
+curl http://127.0.0.1:9080/say
 ```
 
 ## Development
