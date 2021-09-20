@@ -26,7 +26,7 @@ RUN npm install
 RUN npm run build
 
 # APISIX with JavaScript Plugin Runner
-FROM apache/apisix:2.7-alpine
+FROM apache/apisix:2.9-alpine
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 
 # Node.js

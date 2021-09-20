@@ -1,10 +1,7 @@
-FROM apache/apisix:2.7-alpine
+FROM apache/apisix:2.9-alpine
 
 # Etcd
-ARG ETCD_VERSION=v3.4.14
-RUN wget https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz \
-    && tar -zxvf etcd-${ETCD_VERSION}-linux-amd64.tar.gz \
-    && ln -s etcd-${ETCD_VERSION}-linux-amd64 etcd
+COPY --from=bitnami/etcd:3.5.0 /opt/bitnami/etcd/bin/etcd /opt/bitnami/etcd/bin/etcdctl /usr/local/bin/
 
 # Node.js
 COPY --from=node:16.3.0-alpine /usr/local/include/node /usr/local/include/node

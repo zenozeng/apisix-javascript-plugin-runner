@@ -4,7 +4,7 @@ uid := $(shell id -u)
 
 .PHONY: build
 build:
-	git submodule init
+	git submodule update --init
 	npm run build
 
 dev:

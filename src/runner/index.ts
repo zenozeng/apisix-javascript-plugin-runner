@@ -13,6 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import Cache from './cache'
+import Logger from '../util/logger'
+
 interface Plugin {
     getName(): string
     parseConf(conf: string): string
@@ -69,15 +72,17 @@ class Runner {
         [name: string]: Plugin
     }
     private cacheCount: number
-    private cache: {
-        [key: string]: any
-    }
+    private keyCache: Cache
+    private tokenCache: Cache
+    private logger: Logger
 
     constructor() {
         this.plugins = []
         this.pluginMap = {}
         this.cacheCount = 0
-        this.cache = {}
+        this.keyCache = new Cache()
+        this.tokenCache = new Cache()
+        this.logger = new Logger()
     }
 
     registerPlugin(plugin: Plugin) {
@@ -91,34 +96,43 @@ class Runner {
         return this.cacheCount
     }
 
-    setCache(k: string, val: Object) {
-        this.cache[k] = val
-    }
-
-    getCache(k: string) {
-        return this.cache[k]
-    }
-
-    prepareConf(confList: {name: string, value: string}[]): number {
+    /**
+     * prepareConf
+     * 
+     * @param key idempotent key (APISIX >= 2.9)
+     * @param confList 
+     * @returns 
+     */
+    prepareConf(key: string, confList: {name: string, value: string}[]): number {
+        if (key) {
+            let token = this.keyCache.get(key)
+            this.logger.debug("prepareConf: idempotent key: ", key, "token: ", token)
+            if (token !== null) {
+                return token as number
+            }
+        }
         confList = confList.
             filter(({name}) => this.pluginMap[name]).
             map(({name, value}) => {
                 return {name, value: this.pluginMap[name].parseConf(value)}
             })
         const token = this.genCacheToken()
-        this.setCache(token.toString(), confList)
+        this.tokenCache.set(token.toString(), confList)
+        if (key) {
+            this.keyCache.set(key, token)
+        }
         return token
     }
 
     async httpReqCall(confToken: number, request: Request) {
-        const cache = this.getCache(confToken.toString()) as {name: string, value: string}[]
+        const cache = this.tokenCache.get(confToken.toString()) as {name: string, value: string}[]
         if (!cache) {
             throw new Error(`Cache ${confToken} not found`)
         }
-        console.debug({cache})
+        this.logger.debug({cache})
         const response = {} as Response
         for (let {name, value} of cache)  {
-            console.debug({name, value})
+            this.logger.debug(name, value)
             await this.pluginMap[name].filter(value, request, response)
         }
         const isStop = response.body || response.status || response.headers

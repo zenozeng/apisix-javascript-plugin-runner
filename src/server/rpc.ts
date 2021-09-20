@@ -62,7 +62,7 @@ class RPCServer {
             const value = conf.value()
             list.push({name, value})
         }
-        const confToken = this.runner.prepareConf(list)
+        const confToken = this.runner.prepareConf(req.key(), list)
         PrepareConfResponse.startResp(builder)
         PrepareConfResponse.addConfToken(builder, confToken)
         console.debug(`prepareConf: confToken: ${confToken}`)
