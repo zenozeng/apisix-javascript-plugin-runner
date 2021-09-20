@@ -12,18 +12,10 @@ RUN apt-get update; \
     unzip \
     wget; \
     rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /opt && \
-    cd /opt && \
-    git clone --progress --verbose --depth=1 https://github.com/google/flatbuffers.git && \
-    cd /opt/flatbuffers && \
-    CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake -G "Unix Makefiles" && \
-    make && make install && \
-    flatc --version
 COPY . /usr/local/apisix/javascript-plugin-runner
 WORKDIR /usr/local/apisix/javascript-plugin-runner
-RUN cd src/ext-plugin/ && flatc --ts ext-plugin.fbs
 RUN npm install
-RUN npm run build
+RUN make build
 
 # APISIX with JavaScript Plugin Runner
 FROM apache/apisix:2.9-alpine
