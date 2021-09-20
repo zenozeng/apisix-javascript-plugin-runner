@@ -22,9 +22,9 @@ FROM apache/apisix:2.9-alpine
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 
 # Node.js
-COPY --from=node:16.4.2-alpine /usr/local/include/node /usr/local/include/node
-COPY --from=node:16.4.2-alpine /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node:16.4.2-alpine /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:16.9.1-alpine /usr/local/include/node /usr/local/include/node
+COPY --from=node:16.9.1-alpine /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node:16.9.1-alpine /usr/local/bin/node /usr/local/bin/node
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm; \
     ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx;
 
