@@ -13,17 +13,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Req as PrepareConfRequest } from '../ext-plugin/a6/prepare-conf/req'
-import { Resp as PrepareConfResponse } from '../ext-plugin/a6/prepare-conf/resp'
-import { Req as HTTPReqCallRequest } from '../ext-plugin/a6/h-t-t-p-req-call/req'
-import { Resp as HTTPReqCallResponse } from '../ext-plugin/a6/h-t-t-p-req-call/resp'
-import { Stop } from '../ext-plugin/a6/h-t-t-p-req-call/stop'
-import { Rewrite } from '../ext-plugin/a6/h-t-t-p-req-call/rewrite'
-import { Action } from '../ext-plugin/a6/h-t-t-p-req-call/action'
-import { Method } from '../ext-plugin/a6/method'
+import { Req as PrepareConfRequest } from '../ext-plugin-proto/typescript/a6/prepare-conf/req'
+import { Resp as PrepareConfResponse } from '../ext-plugin-proto/typescript/a6/prepare-conf/resp'
+import { Req as HTTPReqCallRequest } from '../ext-plugin-proto/typescript/a6/h-t-t-p-req-call/req'
+import { Resp as HTTPReqCallResponse } from '../ext-plugin-proto/typescript/a6/h-t-t-p-req-call/resp'
+import { Stop } from '../ext-plugin-proto/typescript/a6/h-t-t-p-req-call/stop'
+import { Rewrite } from '../ext-plugin-proto/typescript/a6/h-t-t-p-req-call/rewrite'
+import { Action } from '../ext-plugin-proto/typescript/a6/h-t-t-p-req-call/action'
+import { Method } from '../ext-plugin-proto/typescript/a6/method'
 import { ByteBuffer, Builder } from 'flatbuffers'
 import Runner, { Request, Response } from '../runner'
-import { TextEntry } from '../ext-plugin/ext-plugin'
+import { TextEntry } from '../ext-plugin-proto/typescript/ext-plugin'
 
 const RPC_ERROR = 0
 const RPC_PREPARE_CONF = 1

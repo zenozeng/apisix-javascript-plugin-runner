@@ -1,0 +1,3 @@
+[submodule "src/ext-plugin-proto"]
+	path = src/ext-plugin-proto
+	url = git@github.com:zenozeng/ext-plugin-proto.git

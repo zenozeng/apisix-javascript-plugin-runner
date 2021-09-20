@@ -4,8 +4,6 @@ uid := $(shell id -u)
 
 .PHONY: build
 build:
-	docker build -f dev.Dockerfile -t apisix-javascript-plugin-runner:dev .
-	docker run -u $(uid) -v $(workdir):$(workdir) -w $(workdir)/src/ext-plugin/ apisix-javascript-plugin-runner:dev flatc --ts ext-plugin.fbs
 	npm run build
 
 dev:
