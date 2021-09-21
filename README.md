@@ -2,17 +2,16 @@
 
 [Coverage Report](https://zenozeng.github.io/apisix-javascript-plugin-runner/coverage/)
 
-Node.js / Deno / WASM Plugin Runner for APISIX (WIP)
+Node.js / Deno Plugin Runner for APISIX (Alpha)
+
+[Proposal: APISIX JavaScript Plugin Runner](https://github.com/apache/apisix/issues/5106)
 
 ## Roadmap
 
-- [x] Node.js
+- [x] Node.js (Alpha version)
 - [x] Docker Image
-- [ ] Add [docs for APISIX ext-plugin](./docs/protocol.md) (DOING)
 - [ ] Deno (TODO)
-- [ ] WASM (TODO)
-- [ ] WASM Example (Golang) (TODO)
-- [ ] WASM Example (Rust) (TODO)
+- [ ] Benchmark
 
 ## Getting Started
 
