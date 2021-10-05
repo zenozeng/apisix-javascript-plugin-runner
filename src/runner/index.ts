@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Cache from './cache'
+import TTLCache from './cache'
 import Logger from '../util/logger'
 
 interface Plugin {
@@ -72,17 +72,18 @@ class Runner {
         [name: string]: Plugin
     }
     private cacheCount: number
-    private keyCache: Cache
-    private tokenCache: Cache
+    private keyCache: TTLCache
+    private tokenCache: TTLCache
     private logger: Logger
 
     constructor() {
         this.plugins = []
         this.pluginMap = {}
         this.cacheCount = 0
-        this.keyCache = new Cache()
-        this.tokenCache = new Cache()
+        this.keyCache = new TTLCache()
+        this.tokenCache = new TTLCache()
         this.logger = new Logger()
+        this.confCacheTTL = 3600 * 1000
     }
 
     registerPlugin(plugin: Plugin) {
@@ -117,9 +118,9 @@ class Runner {
                 return {name, value: this.pluginMap[name].parseConf(value)}
             })
         const token = this.genCacheToken()
-        this.tokenCache.set(token.toString(), confList)
+        this.tokenCache.set(token.toString(), confList, this.confCacheTTL)
         if (key) {
-            this.keyCache.set(key, token)
+            this.keyCache.set(key, token, this.confCacheTTL)
         }
         return token
     }

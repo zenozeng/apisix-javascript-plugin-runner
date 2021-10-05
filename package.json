@@ -11,7 +11,9 @@
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
     "all": true,
-    "exclude": ["src/ext-plugin"]
+    "exclude": [
+      "src/ext-plugin"
+    ]
   },
   "jest": {
     "roots": [

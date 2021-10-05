@@ -17,13 +17,15 @@ import * as net from 'net'
 import * as fs from 'fs'
 import RPCServer from './rpc'
 import Runner from '../runner'
+import Logger from '../util/logger'
 
 const HEADER_LEN = 4
 const sockAddr = process.env.APISIX_LISTEN_ADDRESS.replace(/^unix:/, '')
 const runner = new Runner()
 const rpcServer = new RPCServer(runner)
 const args = process.argv.slice(2)
-console.log(`JavaScript Plugin Runner Listening on ${sockAddr}`)
+const logger = new Logger()
+logger.log(`JavaScript Plugin Runner Listening on ${sockAddr}`)
 args.forEach((path) => {
     try {
         const plugin = new (require(path) as any)()
@@ -35,7 +37,7 @@ args.forEach((path) => {
 
 let connCount = -1
 const server = net.createServer((conn) => {
-    console.log(`Client connected`)
+    logger.debug(`Client connected`)
     let receivedBytes = 0
     let dataLength: number = null
     let ty: number = null
@@ -44,7 +46,7 @@ const server = net.createServer((conn) => {
     connCount++
     let connId = connCount
     conn.on('data', async (d: Buffer) => {
-        console.debug(`Conn#${connId}: receive data: ${d.length} bytes`)
+        logger.debug(`Conn#${connId}: receive data: ${d.length} bytes`)
         if (done) {
             // new data package received, reinit
             receivedBytes = 0
@@ -66,7 +68,7 @@ const server = net.createServer((conn) => {
                 const new_buf = Buffer.alloc(dataLength)
                 buf.copy(new_buf, 0, HEADER_LEN)
                 buf = new_buf
-                console.debug(`Conn#${connId} rpc header: `, {ty, dataLength})
+                logger.debug(`Conn#${connId} rpc header: `, {ty, dataLength})
             }
         }
         if (dataLength !== null && receivedBytes >= HEADER_LEN + dataLength) {
@@ -93,7 +95,7 @@ const server = net.createServer((conn) => {
 })
 
 server.listen(sockAddr, () => {
-    fs.chmodSync(sockAddr, 0o777)
+    fs.chmodSync(sockAddr, 0o766)
 })
 
 process.on('beforeExit', () => {
