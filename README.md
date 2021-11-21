@@ -10,7 +10,7 @@ Node.js / Deno Plugin Runner for APISIX (Alpha)
 
 - [x] Node.js (Alpha version)
 - [x] Docker Image
-- [ ] Deno (TODO)
+- [x] Deno
 - [ ] Benchmark
 
 ## Getting Started
@@ -115,6 +115,10 @@ curl -v http://127.0.0.1:9080/say
 * Connection #0 to host 127.0.0.1 left intact
 123
 ```
+
+#### Deno Example
+
+See [./examples/deno-say](./examples/deno-say)
 
 ## Interface
 

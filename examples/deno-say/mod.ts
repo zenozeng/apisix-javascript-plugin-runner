@@ -27,7 +27,7 @@ interface Response {
 class SayPlugin {
 
     getName() {
-        return "say"
+        return "deno-say"
     }
 
     parseConf(conf: string) {
@@ -43,7 +43,7 @@ class SayPlugin {
 
     // Filter will be executed on every request with the say plugin configured.
     filter(conf: Config, _request: unknown, response: Response) {
-        const body = 'Say (Deno)';
+        const body = conf.body;
         const headers = new Map()
         headers.set('X-Resp-A6-JavaScript-Plugin', body)
         headers.set('ETag', this.etag(body))

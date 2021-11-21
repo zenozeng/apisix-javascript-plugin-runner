@@ -3,6 +3,7 @@ ext-plugin:
     - "/usr/local/apisix/javascript-plugin-runner/bin/runner"
     - "/usr/local/apisix/javascript-plugin-runner/examples/say.js"
     - "/usr/local/apisix/javascript-plugin-runner/examples/rewrite.js"
+    - "/usr/local/apisix/javascript-plugin-runner/examples/deno-say/dist/bundle.js"
 
 apisix:
   allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow

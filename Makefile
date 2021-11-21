@@ -1,11 +1,12 @@
 all: SHELL:=/bin/bash
-workdir := $(shell realpath $$PWD)
+workdir := $(shell pwd -P)
 uid := $(shell id -u)
 
 .PHONY: build
 build:
 	git submodule update --init
 	npm run build
+	make --directory examples/deno-say build
 
 dev:
 	docker run -u $(uid) -v $(workdir):$(workdir) -w $(workdir) -it apisix-javascript-plugin-runner:dev bash

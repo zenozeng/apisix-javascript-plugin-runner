@@ -130,4 +130,31 @@ describe('APISIX JavaScript Plugin Runner', () => {
         expect(headers['X-Req-A6-JavaScript-Rewrite-Example'.toLowerCase()]).toBe(conf.header)
         expect(args['hello']).toBe('world')
     })
+
+    it('should be able run deno plugin', async () => {
+        let resp = await fetch(`${APISIX_ADMIN_ENDPOINT}/routes/1`, {
+            method: 'PUT',
+            headers: {
+                'X-API-KEY': APISIX_ADMIN_TOKEN
+            },
+            body: JSON.stringify({
+                "uri": "/deno",
+                "remote_addrs": ["127.0.0.0/8"],
+                "methods": ["PUT", "GET"],
+                "plugins": {
+                    "ext-plugin-pre-req": {
+                        "conf" : [
+                            {"name": "deno-say", "value": "{\"body\":\"deno:say\"}"}
+                        ]
+                    }
+                },
+            })
+        })
+        expect(resp.status).toBe(201)
+        resp = await fetch(APISIX_TEST_ENDPOINT + '/deno', {
+            method: 'GET'
+        })
+        expect(resp.status).toBe(200)
+        expect((await resp.buffer()).toString()).toBe('deno:say')
+    })
 })
