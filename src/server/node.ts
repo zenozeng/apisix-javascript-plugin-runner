@@ -15,90 +15,113 @@
 
 import * as net from 'net'
 import * as fs from 'fs'
-import RPCServer from './rpc'
-import Runner from '../runner'
-import Logger from '../util/logger'
+import RPCServer from './rpc.js'
+import Runner from '../runner/index.js'
+import Logger from '../util/logger.js'
 
-const HEADER_LEN = 4
-const sockAddr = process.env.APISIX_LISTEN_ADDRESS.replace(/^unix:/, '')
-const runner = new Runner()
-const rpcServer = new RPCServer(runner)
-const args = process.argv.slice(2)
-const logger = new Logger()
-logger.log(`JavaScript Plugin Runner Listening on ${sockAddr}`)
-args.forEach((path) => {
+/**
+ * Import CommonJS Module and ES Module
+ * 
+ * @param pluginPath 
+ * @returns module or null
+ */
+async function importPlugin(pluginPath: string) {
     try {
-        const plugin = new (require(path) as any)()
-        runner.registerPlugin(plugin)
+        let isCommonJSModule = fs.readFileSync(pluginPath, {encoding: 'utf-8'}).includes('module.exports')
+        console.log(`Loading plugin: ${pluginPath}, mode: ${isCommonJSModule ? 'CommonJS' : 'ES Module'}`)
+        let Plugin = isCommonJSModule ? require(pluginPath) as any : (await import(pluginPath))
+        return new Plugin()
     } catch (e) {
+        console.error(`Fail to import plugin ${pluginPath}`)
         console.error(e)
+        return null
     }
-})
+}
 
-let connCount = -1
-const server = net.createServer((conn) => {
-    logger.debug(`Client connected`)
-    let receivedBytes = 0
-    let dataLength: number = null
-    let ty: number = null
-    let buf = Buffer.alloc(0)
-    let done = false
-    connCount++
-    let connId = connCount
-    conn.on('data', async (d: Buffer) => {
-        logger.debug(`Conn#${connId}: receive data: ${d.length} bytes`)
-        if (done) {
-            // new data package received, reinit
-            receivedBytes = 0
-            dataLength = null
-            ty = null
-            buf = Buffer.alloc(0)
-            done = false
+async function init() {
+    const HEADER_LEN = 4
+    const sockAddr = process.env.APISIX_LISTEN_ADDRESS.replace(/^unix:/, '')
+    const runner = new Runner()
+    const rpcServer = new RPCServer(runner)
+    const args = process.argv.slice(2)
+    const logger = new Logger()
+    logger.log(`JavaScript Plugin Runner Listening on ${sockAddr}`)
+
+    for (let pluginPath of args) {
+        let plugin = await importPlugin(pluginPath)
+        if (plugin) {
+            runner.registerPlugin(plugin)
         }
-        if (dataLength === null) {
-            buf = Buffer.concat([buf, d])
-        } else {
-            d.copy(buf, receivedBytes)
-        }
-        receivedBytes += d.length
-        if (dataLength === null) {
-            if (receivedBytes >= HEADER_LEN) {
-                ty = buf[0]
-                dataLength = Buffer.from([0, buf[1], buf[2], buf[3]]).readInt32BE()
-                const new_buf = Buffer.alloc(dataLength)
-                buf.copy(new_buf, 0, HEADER_LEN)
-                buf = new_buf
-                logger.debug(`Conn#${connId} rpc header: `, {ty, dataLength})
+    }
+
+    let connCount = -1
+    const server = net.createServer((conn) => {
+        logger.debug(`Client connected`)
+        let receivedBytes = 0
+        let dataLength: number = null
+        let ty: number = null
+        let buf = Buffer.alloc(0)
+        let done = false
+        connCount++
+        let connId = connCount
+        conn.on('data', async (d: Buffer) => {
+            logger.debug(`Conn#${connId}: receive data: ${d.length} bytes`)
+            if (done) {
+                // new data package received, reinit
+                receivedBytes = 0
+                dataLength = null
+                ty = null
+                buf = Buffer.alloc(0)
+                done = false
             }
-        }
-        if (dataLength !== null && receivedBytes >= HEADER_LEN + dataLength) {
-            done = true
-            const bytes = await rpcServer.dispatch(ty, buf)
-            const respSize = bytes.length
-            const header = Buffer.alloc(HEADER_LEN)
-            header.writeUInt32BE(respSize, 0)
-            header[0] = ty
-            conn.write(header)
-            conn.write(bytes, (err) => {
-                console.error(err)
-            })
-        }
+            if (dataLength === null) {
+                buf = Buffer.concat([buf, d])
+            } else {
+                d.copy(buf, receivedBytes)
+            }
+            receivedBytes += d.length
+            if (dataLength === null) {
+                if (receivedBytes >= HEADER_LEN) {
+                    ty = buf[0]
+                    dataLength = Buffer.from([0, buf[1], buf[2], buf[3]]).readInt32BE()
+                    const new_buf = Buffer.alloc(dataLength)
+                    buf.copy(new_buf, 0, HEADER_LEN)
+                    buf = new_buf
+                    logger.debug(`Conn#${connId} rpc header: `, { ty, dataLength })
+                }
+            }
+            if (dataLength !== null && receivedBytes >= HEADER_LEN + dataLength) {
+                done = true
+                const bytes = await rpcServer.dispatch(ty, buf)
+                const respSize = bytes.length
+                const header = Buffer.alloc(HEADER_LEN)
+                header.writeUInt32BE(respSize, 0)
+                header[0] = ty
+                conn.write(header)
+                conn.write(bytes, (err) => {
+                    console.error(err)
+                })
+            }
+        })
+
+        conn.on('close', () => {
+            console.debug(`Connection closed`)
+        })
+
+        conn.on('error', (err) => {
+            console.error(err)
+        })
     })
 
-    conn.on('close', () => {
-        console.debug(`Connection closed`)
+    server.listen(sockAddr, () => {
+        fs.chmodSync(sockAddr, 0o766)
     })
 
-    conn.on('error', (err) => {
-        console.error(err)
-    })
-})
+    process.on('beforeExit', () => {
+        // clean up sock file
+        server.close()
+    });
 
-server.listen(sockAddr, () => {
-    fs.chmodSync(sockAddr, 0o766)
-})
+}
 
-process.on('beforeExit', () => {
-    // clean up sock file
-    server.close()
-});
+init()

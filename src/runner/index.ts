@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import TTLCache from './cache'
-import Logger from '../util/logger'
+import TTLCache from './cache.js'
+import Logger from '../util/logger.js'
 
 interface Plugin {
     getName(): string
