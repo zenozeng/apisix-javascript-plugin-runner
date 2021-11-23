@@ -26,6 +26,10 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+    - name: Setup Deno
+      uses: denoland/setup-deno@main
+      with:
+        deno-version: v1.x
     - run: npm ci
     - run: make build
     - run: make test

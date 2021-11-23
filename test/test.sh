@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROJECT_ROOT=$(realpath $(dirname $0)/..)
+PROJECT_ROOT=$(cd $(dirname $0)/..; pwd -P)
 DOCKER_IMAGE=apisix-javascript-plugin-runner:test
 CONTAINER_NAME=apisix-ext-plugin-test
 

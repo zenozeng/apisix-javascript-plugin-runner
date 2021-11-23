@@ -16,6 +16,7 @@
 import {describe, it, expect} from '@jest/globals'
 import fetch from 'node-fetch'
 import * as fs from 'fs'
+import * as crypto from 'crypto'
 
 const APISIX_IP = process.env.APISIX_IP || '127.0.0.1'
 
@@ -129,5 +130,35 @@ describe('APISIX JavaScript Plugin Runner', () => {
         expect(headers['X-Req-A6-JavaScript-Plugin'.toLowerCase()]).toBe('Rewrite')
         expect(headers['X-Req-A6-JavaScript-Rewrite-Example'.toLowerCase()]).toBe(conf.header)
         expect(args['hello']).toBe('world')
+    })
+
+    it('should be able run deno plugin', async () => {
+        const expectedBody = 'deno:say:' + Math.random()
+        let resp = await fetch(`${APISIX_ADMIN_ENDPOINT}/routes/1`, {
+            method: 'PUT',
+            headers: {
+                'X-API-KEY': APISIX_ADMIN_TOKEN
+            },
+            body: JSON.stringify({
+                "uri": "/deno",
+                "remote_addrs": ["127.0.0.0/8"],
+                "methods": ["PUT", "GET"],
+                "plugins": {
+                    "ext-plugin-pre-req": {
+                        "conf" : [
+                            {"name": "deno-say", "value": "{\"body\":\"" + expectedBody + "\"}"}
+                        ]
+                    }
+                },
+            })
+        })
+        expect(resp.status).toBe(200)
+        resp = await fetch(APISIX_TEST_ENDPOINT + '/deno', {
+            method: 'GET'
+        })
+
+        expect(resp.status).toBe(200)
+        expect(resp.headers.get('ETag')).toBe(crypto.createHash('sha256').update(expectedBody).digest('hex'))
+        expect((await resp.buffer()).toString()).toBe(expectedBody)
     })
 })
