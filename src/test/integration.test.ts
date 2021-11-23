@@ -16,6 +16,7 @@
 import {describe, it, expect} from '@jest/globals'
 import fetch from 'node-fetch'
 import * as fs from 'fs'
+import * as crypto from 'crypto'
 
 const APISIX_IP = process.env.APISIX_IP || '127.0.0.1'
 
@@ -132,6 +133,7 @@ describe('APISIX JavaScript Plugin Runner', () => {
     })
 
     it('should be able run deno plugin', async () => {
+        const expectedBody = 'deno:say:' + Math.random()
         let resp = await fetch(`${APISIX_ADMIN_ENDPOINT}/routes/1`, {
             method: 'PUT',
             headers: {
@@ -144,17 +146,19 @@ describe('APISIX JavaScript Plugin Runner', () => {
                 "plugins": {
                     "ext-plugin-pre-req": {
                         "conf" : [
-                            {"name": "deno-say", "value": "{\"body\":\"deno:say\"}"}
+                            {"name": "deno-say", "value": "{\"body\":\"" + expectedBody + "\"}"}
                         ]
                     }
                 },
             })
         })
-        expect(resp.status).toBe(201)
+        expect(resp.status).toBe(200)
         resp = await fetch(APISIX_TEST_ENDPOINT + '/deno', {
             method: 'GET'
         })
+
         expect(resp.status).toBe(200)
-        expect((await resp.buffer()).toString()).toBe('deno:say')
+        expect(resp.headers.get('ETag')).toBe(crypto.createHash('sha256').update(expectedBody).digest('hex'))
+        expect((await resp.buffer()).toString()).toBe(expectedBody)
     })
 })
