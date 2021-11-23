@@ -27,9 +27,8 @@ import Logger from '../util/logger.js'
  */
 async function importPlugin(pluginPath: string) {
     try {
-        let isCommonJSModule = fs.readFileSync(pluginPath, {encoding: 'utf-8'}).includes('module.exports')
-        console.log(`Loading plugin: ${pluginPath}, mode: ${isCommonJSModule ? 'CommonJS' : 'ES Module'}`)
-        let Plugin = isCommonJSModule ? require(pluginPath) as any : (await import(pluginPath))
+        console.log(`Loading plugin: ${pluginPath}`)
+        let {default: Plugin} = await import(pluginPath)
         return new Plugin()
     } catch (e) {
         console.error(`Fail to import plugin ${pluginPath}`)
