@@ -1,4 +1,5 @@
-FROM node:16.4.2 as builder
+FROM node:17.1.0 as builder
+COPY --from=denoland/deno:1.16.2 /usr/bin/deno /usr/bin/deno
 ENV DEBIAN_FRONTEND=noninteractive
 RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
 RUN apt-get update; \
