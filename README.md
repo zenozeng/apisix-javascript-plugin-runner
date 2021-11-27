@@ -185,6 +185,7 @@ interface Response {
     - integration.test.ts
 
 ```bash
+git submodule update --init
 npm install
 make build
 make test

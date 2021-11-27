@@ -4,7 +4,6 @@ uid := $(shell id -u)
 
 .PHONY: build
 build:
-	git submodule update --init
 	npm run build
 	make --directory examples/deno-say build
 
