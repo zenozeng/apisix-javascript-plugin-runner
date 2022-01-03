@@ -86,7 +86,7 @@ class RPCServer {
             request.headers.set(req.headers(i).name(), req.headers(i).value())
         }
         for (let i = 0; i < req.argsLength(); i++) {
-            request.headers.set(req.args(i).name(), req.args(i).value())
+            request.args.set(req.args(i).name(), req.args(i).value())
         }
         const confToken = req.confToken()
         const {isStop, response} = await this.runner.httpReqCall(confToken, request)
