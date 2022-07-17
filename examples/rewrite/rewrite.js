@@ -24,8 +24,11 @@ class RewritePlugin {
     }
 
     async filter(conf, request, response) {
+        let body = await request.body()
+        console.log({ body })
         request.headers.set('X-Req-A6-JavaScript-Plugin', 'Rewrite')
         request.headers.set('X-Req-A6-JavaScript-Rewrite-Example', conf.header)
+        request.headers.set('X-Req-A6-JavaScript-Rewrite-Example-Body', body)
         request.path = conf.path
         request.args.set('hello', 'world')
     }

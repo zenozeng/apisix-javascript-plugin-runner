@@ -24,22 +24,24 @@ interface Plugin {
 
 interface Request {
     // The id is for debug. It will be recycled when the number is exhausted
-    id: number;
+    id: number
 
     // the path of the request.
-    path: string;
+    path: string
 
     // The associated Headers object of the request.
     // See·https://developer.mozilla.org/en-US/docs/Web/API/Headers
-    headers: Headers;
+    headers: Headers
 
-    srcIp: number[];
+    srcIp: number[]
 
     // Request's method (GET, POST, etc.)
-    method: string;
+    method: string
 
     // The associated Args object of the request.
-    args: Args;
+    args: Args
+
+    body(): Promise<string>
 }
 
 
@@ -104,7 +106,7 @@ class Runner {
      * @param confList 
      * @returns 
      */
-    prepareConf(key: string, confList: {name: string, value: string}[]): number {
+    prepareConf(key: string, confList: { name: string, value: string }[]): number {
         if (key) {
             let token = this.keyCache.get(key)
             this.logger.debug("prepareConf: idempotent key: ", key, "token: ", token)
@@ -113,9 +115,9 @@ class Runner {
             }
         }
         confList = confList.
-            filter(({name}) => this.pluginMap[name]).
-            map(({name, value}) => {
-                return {name, value: this.pluginMap[name].parseConf(value)}
+            filter(({ name }) => this.pluginMap[name]).
+            map(({ name, value }) => {
+                return { name, value: this.pluginMap[name].parseConf(value) }
             })
         const token = this.genCacheToken()
         this.tokenCache.set(token.toString(), confList, this.confCacheTTL)
@@ -126,13 +128,13 @@ class Runner {
     }
 
     async httpReqCall(confToken: number, request: Request) {
-        const cache = this.tokenCache.get(confToken.toString()) as {name: string, value: string}[]
+        const cache = this.tokenCache.get(confToken.toString()) as { name: string, value: string }[]
         if (!cache) {
             throw new Error(`Cache ${confToken} not found`)
         }
-        this.logger.debug({cache})
+        this.logger.debug({ cache })
         const response = {} as Response
-        for (let {name, value} of cache)  {
+        for (let { name, value } of cache) {
             this.logger.debug(name, value)
             await this.pluginMap[name].filter(value, request, response)
         }
@@ -142,10 +144,10 @@ class Runner {
                 response.status = 200 // defaults to 200
             }
         }
-        return {isStop, response, request}
+        return { isStop, response, request }
     }
 
 }
 
 export default Runner
-export {Request, Response, Headers, Plugin}
+export { Request, Response, Headers, Plugin }

@@ -14,6 +14,10 @@
 // limitations under the License.
 
 import { Req as PrepareConfRequest } from '../ext-plugin-proto/typescript/a6/prepare-conf/req.js'
+import { Req as ExtraInfoRequest } from '../ext-plugin-proto/typescript/a6/extra-info/req'
+import { Info as ExtraInfoInfo } from '../ext-plugin-proto/typescript/a6/extra-info/info'
+import { Resp as ExtraInfoResponse } from '../ext-plugin-proto/typescript/a6/extra-info/resp'
+import { ReqBody as ExtraInfoRequestBody } from '../ext-plugin-proto/typescript/a6/extra-info/req-body'
 import { Resp as PrepareConfResponse } from '../ext-plugin-proto/typescript/a6/prepare-conf/resp.js'
 import { Req as HTTPReqCallRequest } from '../ext-plugin-proto/typescript/a6/h-t-t-p-req-call/req.js'
 import { Resp as HTTPReqCallResponse } from '../ext-plugin-proto/typescript/a6/h-t-t-p-req-call/resp.js'
@@ -28,6 +32,14 @@ import { TextEntry } from '../ext-plugin-proto/typescript/ext-plugin.js'
 const RPC_ERROR = 0
 const RPC_PREPARE_CONF = 1
 const RPC_HTTP_REQ_CALL = 2
+const RPC_EXTRA_INFO = 3
+
+const HEADER_LEN = 4
+
+interface Connection {
+    read: (size: number) => Promise<Uint8Array>
+    write: (data: Uint8Array) => Promise<boolean>
+}
 
 class RPCServer {
 
@@ -35,9 +47,36 @@ class RPCServer {
 
     constructor(runner: Runner) {
         this.runner = runner
+
     }
 
-    async dispatch(ty: number, bytes: Uint8Array) {
+    async readMessage(connection: Connection) {
+        const buf = await connection.read(HEADER_LEN)
+        const ty = buf[0]
+        const dataLength = Buffer.from([0, buf[1], buf[2], buf[3]]).readInt32BE()
+        const data = await connection.read(dataLength)
+        return { ty, data }
+    }
+
+    async writeMessage(connection: Connection, { ty, data }: { ty: number, data: Uint8Array }) {
+        const respSize = data.length
+        const header = Buffer.alloc(HEADER_LEN)
+        header.writeUInt32BE(respSize, 0)
+        header[0] = ty
+        connection.write(header)
+        connection.write(data)
+    }
+
+    async onConnection(connection: Connection) {
+        const { ty, data } = await this.readMessage(connection)
+        const response = await this.dispatch(connection, ty, data)
+        await this.writeMessage(connection, {
+            ty,
+            data: response
+        })
+    }
+
+    async dispatch(connection: Connection, ty: number, bytes: Uint8Array) {
         const builder = new Builder()
         const buf = new ByteBuffer(bytes)
         switch (ty) {
@@ -45,7 +84,7 @@ class RPCServer {
                 await this.prepareConf(buf, builder)
                 break
             case RPC_HTTP_REQ_CALL:
-                await this.httpReqCall(buf, builder)
+                await this.httpReqCall(connection, buf, builder)
                 break
             default:
                 throw new Error(`JavaScript Plugin Runner: Failed to dispatch ty ${ty}, bytes: ${bytes.length}`)
@@ -60,7 +99,7 @@ class RPCServer {
             const conf = req.conf(i)
             const name = conf.name()
             const value = conf.value()
-            list.push({name, value})
+            list.push({ name, value })
         }
         const confToken = this.runner.prepareConf(req.key(), list)
         PrepareConfResponse.startResp(builder)
@@ -69,7 +108,7 @@ class RPCServer {
         builder.finish(PrepareConfResponse.endResp(builder))
     }
 
-    async httpReqCall(buf: ByteBuffer, builder: Builder) {
+    async httpReqCall(connection: Connection, buf: ByteBuffer, builder: Builder) {
         const req = HTTPReqCallRequest.getRootAsReq(buf)
         const request = {
             id: req.id(),
@@ -77,7 +116,26 @@ class RPCServer {
             headers: new Map(),
             srcIp: [] as number[],
             method: this.getMethodName(req.method()),
-            args: new Map()
+            args: new Map(),
+            body: async () => {
+                const builder = new Builder()
+                const reqBody = ExtraInfoRequestBody.createReqBody(builder)
+                ExtraInfoRequest.startReq(builder)
+                ExtraInfoRequest.addInfoType(builder, ExtraInfoInfo.ReqBody)
+                ExtraInfoRequest.addInfo(builder, reqBody)
+                builder.finish(ExtraInfoRequest.endReq(builder))
+                await this.writeMessage(connection, {
+                    ty: RPC_EXTRA_INFO,
+                    data: builder.asUint8Array()
+                })
+                let { data } = await this.readMessage(connection)
+                let resp = ExtraInfoResponse.getRootAsResp(new ByteBuffer(data))
+                let resultArray = resp.resultArray()
+                if (!resultArray) {
+                    return ''
+                }
+                return new TextDecoder().decode(resultArray)
+            }
         }
         for (let i = 0; i < req.srcIpLength(); i++) {
             request.srcIp.push(req.srcIp(i))
@@ -89,10 +147,10 @@ class RPCServer {
             request.args.set(req.args(i).name(), req.args(i).value())
         }
         const confToken = req.confToken()
-        const {isStop, response} = await this.runner.httpReqCall(confToken, request)
+        const { isStop, response } = await this.runner.httpReqCall(confToken, request)
         let action = isStop ? this.createStop(builder, response) : this.createRewrite(builder, request)
         let actionType = isStop ? Action.Stop : Action.Rewrite
-        console.debug({isStop, response})
+        console.debug({ isStop, response })
         HTTPReqCallResponse.startResp(builder)
         HTTPReqCallResponse.addId(builder, request.id)
         HTTPReqCallResponse.addAction(builder, action)
@@ -135,7 +193,7 @@ class RPCServer {
         return Rewrite.endRewrite(builder)
     }
 
-    protected mapToTextEntries(builder: Builder, m: {keys(): Iterable<string>, get(k: string): string}) {
+    protected mapToTextEntries(builder: Builder, m: { keys(): Iterable<string>, get(k: string): string }) {
         const textEntries = []
         if (m) {
             for (let k of m.keys()) {

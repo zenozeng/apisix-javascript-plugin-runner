@@ -21,7 +21,7 @@ Node.js / Deno Plugin Runner for APISIX (Alpha)
 | APISIX JavaScript Plugin Runner | Apache APISIX |
 | --- | --- |
 | main | v2.13.2+ |
-| v0.1.0 | v2.9 |
+| v0.1.0 | v2.7 |
 
 ### Installation
 
@@ -199,8 +199,14 @@ make build
 make test
 ```
 
+### Handle HTTPReqCall
+
+https://github.com/apache/apisix/blob/master/docs/en/latest/internal/plugin-runner.md#handle-httpreqcall
+
 ## References
 
+- https://github.com/api7/ext-plugin-proto/blob/main/ext-plugin.fbs
 - https://github.com/apache/apisix/blob/master/docs/en/latest/external-plugin.md
+- https://github.com/apache/apisix/blob/master/docs/en/latest/internal/plugin-runner.md
 - https://github.com/apache/apisix-go-plugin-runner/blob/master/internal/server/server.go
 - https://github.com/apache/apisix/blob/master/docs/en/latest/plugins/ext-plugin-pre-req.md

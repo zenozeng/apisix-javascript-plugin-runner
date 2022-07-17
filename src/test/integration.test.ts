@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {describe, it, expect} from '@jest/globals'
+import { describe, it, expect } from '@jest/globals'
 import fetch from 'node-fetch'
 import * as fs from 'fs'
 import * as crypto from 'crypto'
@@ -23,7 +23,7 @@ const APISIX_IP = process.env.APISIX_IP || '127.0.0.1'
 const APISIX_TEST_ENDPOINT = `http://${APISIX_IP}:9080`
 const APISIX_ADMIN_ENDPOINT = `http://${APISIX_IP}:9180/apisix/admin`
 const APISIX_ADMIN_TOKEN = `196e3a4c-ad0d-4a4f-954a-285678b74a24`
-const lua = fs.readFileSync('src/test/serverless.lua', {encoding: 'utf-8'})
+const lua = fs.readFileSync('src/test/serverless.lua', { encoding: 'utf-8' })
 
 describe('APISIX JavaScript Plugin Runner', () => {
     it('should be able to add route with plugin', async () => {
@@ -38,8 +38,8 @@ describe('APISIX JavaScript Plugin Runner', () => {
                 "methods": ["PUT", "GET"],
                 "plugins": {
                     "ext-plugin-pre-req": {
-                        "conf" : [
-                            {"name": "say", "value": "{\"body\":\"123\"}"}
+                        "conf": [
+                            { "name": "say", "value": "{\"body\":\"123\"}" }
                         ]
                     }
                 },
@@ -70,7 +70,7 @@ describe('APISIX JavaScript Plugin Runner', () => {
                 "plugins": {
                     "serverless-pre-function": {
                         "phase": "access",
-                        "functions" : [lua]
+                        "functions": [lua]
                     }
                 },
             })
@@ -84,13 +84,14 @@ describe('APISIX JavaScript Plugin Runner', () => {
             body: '123'
         })
         expect(resp.status).toBe(200)
-        const {body, headers, request_uri} = await resp.json()
+        const { body, headers, request_uri } = await resp.json()
         expect(body).toBe('123')
         expect(headers['x-hello']).toBe('world')
         expect(request_uri).toBe('/mirror')
     })
 
     it('should be able to rewrite', async () => {
+        let requestBody = 'T' + Math.random()
         let conf = {
             header: '123',
             path: '/mirror'
@@ -103,11 +104,11 @@ describe('APISIX JavaScript Plugin Runner', () => {
             body: JSON.stringify({
                 "uri": "/rewrite",
                 "remote_addrs": ["127.0.0.0/8"],
-                "methods": ["PUT", "GET"],
+                "methods": ["PUT", "GET", "POST"],
                 "plugins": {
                     "ext-plugin-pre-req": {
-                        "conf" : [
-                            {"name": "rewrite", "value": JSON.stringify(conf)}
+                        "conf": [
+                            { "name": "rewrite", "value": JSON.stringify(conf) }
                         ]
                     }
                 },
@@ -116,19 +117,21 @@ describe('APISIX JavaScript Plugin Runner', () => {
                     "nodes": {
                         [APISIX_TEST_ENDPOINT.replace('http://', '')]: 1
                     }
-               },
+                },
             })
         })
         expect(resp.status).toBe(201)
 
         resp = await fetch(APISIX_TEST_ENDPOINT + '/rewrite', {
-            method: 'GET'
+            method: 'POST',
+            body: requestBody
         })
         expect(resp.status).toBe(200)
-        const {headers, request_uri, args} = await resp.json()
+        const { headers, request_uri, args } = await resp.json()
         expect(request_uri).toBe(conf.path + '?hello=world')
         expect(headers['X-Req-A6-JavaScript-Plugin'.toLowerCase()]).toBe('Rewrite')
         expect(headers['X-Req-A6-JavaScript-Rewrite-Example'.toLowerCase()]).toBe(conf.header)
+        expect(headers['X-Req-A6-JavaScript-Rewrite-Example-Body'.toLocaleLowerCase()]).toBe(requestBody)
         expect(args['hello']).toBe('world')
     })
 
@@ -145,8 +148,8 @@ describe('APISIX JavaScript Plugin Runner', () => {
                 "methods": ["PUT", "GET"],
                 "plugins": {
                     "ext-plugin-pre-req": {
-                        "conf" : [
-                            {"name": "deno-say", "value": "{\"body\":\"" + expectedBody + "\"}"}
+                        "conf": [
+                            { "name": "deno-say", "value": "{\"body\":\"" + expectedBody + "\"}" }
                         ]
                     }
                 },

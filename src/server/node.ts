@@ -28,7 +28,7 @@ import Logger from '../util/logger.js'
 async function importPlugin(pluginPath: string) {
     try {
         console.log(`Loading plugin: ${pluginPath}`)
-        let {default: Plugin} = await import(pluginPath)
+        let { default: Plugin } = await import(pluginPath)
         return new Plugin()
     } catch (e) {
         console.error(`Fail to import plugin ${pluginPath}`)
@@ -38,13 +38,12 @@ async function importPlugin(pluginPath: string) {
 }
 
 async function init() {
-    const HEADER_LEN = 4
     const sockAddr = process.env.APISIX_LISTEN_ADDRESS.replace(/^unix:/, '')
     const runner = new Runner()
     const rpcServer = new RPCServer(runner)
     const args = process.argv.slice(2)
     const logger = new Logger()
-    logger.log(`JavaScript Plugin Runner Listening on ${sockAddr}`)
+    logger.log(`APISIX JavaScript Plugin Runner v0.2 Listening on ${sockAddr}`)
 
     for (let pluginPath of args) {
         let plugin = await importPlugin(pluginPath)
@@ -55,60 +54,76 @@ async function init() {
 
     let connCount = -1
     const server = net.createServer((conn) => {
-        logger.debug(`Client connected`)
-        let receivedBytes = 0
-        let dataLength: number = null
-        let ty: number = null
+
         let buf = Buffer.alloc(0)
-        let done = false
+        let closed = false
+
+        let shift = (size: number) => {
+            let part1 = Buffer.alloc(size)
+            let part2 = Buffer.alloc(buf.byteLength - size)
+            buf.copy(part1, 0, 0, size)
+            if (buf.byteLength - size > 0) {
+                buf.copy(part2, 0, size, buf.byteLength)
+            }
+            buf = part2
+            return part1
+        }
+
+        let callbacks: {
+            size: number,
+            resolve: () => void
+            reject: (e: any) => void
+        }[] = []
+
         connCount++
         let connId = connCount
-        conn.on('data', async (d: Buffer) => {
-            logger.debug(`Conn#${connId}: receive data: ${d.length} bytes`)
-            if (done) {
-                // new data package received, reinit
-                receivedBytes = 0
-                dataLength = null
-                ty = null
-                buf = Buffer.alloc(0)
-                done = false
-            }
-            if (dataLength === null) {
-                buf = Buffer.concat([buf, d])
-            } else {
-                d.copy(buf, receivedBytes)
-            }
-            receivedBytes += d.length
-            if (dataLength === null) {
-                if (receivedBytes >= HEADER_LEN) {
-                    ty = buf[0]
-                    dataLength = Buffer.from([0, buf[1], buf[2], buf[3]]).readInt32BE()
-                    const new_buf = Buffer.alloc(dataLength)
-                    buf.copy(new_buf, 0, HEADER_LEN)
-                    buf = new_buf
-                    logger.debug(`Conn#${connId} rpc header: `, { ty, dataLength })
+
+        rpcServer.onConnection({
+            read: async (size: number) => {
+                logger.debug(`[JavaScript]: Conn#${connId}: reading ${size} bytes`)
+                if (buf.byteLength >= size) {
+                    logger.debug(`[JavaScript]: Conn#${connId}: read ${size} bytes`)
+                    return shift(size)
                 }
-            }
-            if (dataLength !== null && receivedBytes >= HEADER_LEN + dataLength) {
-                done = true
-                const bytes = await rpcServer.dispatch(ty, buf)
-                const respSize = bytes.length
-                const header = Buffer.alloc(HEADER_LEN)
-                header.writeUInt32BE(respSize, 0)
-                header[0] = ty
-                conn.write(header)
-                conn.write(bytes, (err) => {
-                    console.error(err)
+                if (closed) {
+                    throw new Error('[JavaScript]: connection closed')
+                }
+                return new Promise((resolve, reject) => {
+                    callbacks.push({
+                        size,
+                        resolve: () => {
+                            logger.debug(`[JavaScript]: Conn#${connId}: read ${size} bytes`)
+                            resolve(shift(size))
+                        },
+                        reject,
+                    })
                 })
+
+            },
+            write: async (data: Uint8Array) => {
+                return conn.write(data)
+            }
+        })
+
+        conn.on('data', async (d: Buffer) => {
+            logger.debug(`[JavaScript]: Conn#${connId}: receive data: ${d.length} bytes`)
+            buf = Buffer.concat([buf, d])
+            let callback = callbacks[0]
+            if (callback && buf.byteLength >= callback.size) {
+                callbacks.shift()
+                callback.resolve()
             }
         })
 
         conn.on('close', () => {
-            console.debug(`Connection closed`)
+            closed = true
         })
 
         conn.on('error', (err) => {
             console.error(err)
+            for (let callback of callbacks) {
+                callback.reject(new Error('[JavaScript]: connection error'))
+            }
         })
     })
 
