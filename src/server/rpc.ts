@@ -14,6 +14,10 @@
 // limitations under the License.
 
 import { Req as PrepareConfRequest } from '../ext-plugin-proto/typescript/a6/prepare-conf/req.js'
+import { Req as ExtraInfoRequest } from '../ext-plugin-proto/typescript/a6/extra-info/req'
+import { Info as ExtraInfoInfo } from '../ext-plugin-proto/typescript/a6/extra-info/info'
+import { Resp as ExtraInfoResponse } from '../ext-plugin-proto/typescript/a6/extra-info/resp'
+import { ReqBody as ExtraInfoRequestBody } from '../ext-plugin-proto/typescript/a6/extra-info/req-body'
 import { Resp as PrepareConfResponse } from '../ext-plugin-proto/typescript/a6/prepare-conf/resp.js'
 import { Req as HTTPReqCallRequest } from '../ext-plugin-proto/typescript/a6/h-t-t-p-req-call/req.js'
 import { Resp as HTTPReqCallResponse } from '../ext-plugin-proto/typescript/a6/h-t-t-p-req-call/resp.js'
@@ -65,14 +69,14 @@ class RPCServer {
 
     async onConnection(connection: Connection) {
         const { ty, data } = await this.readMessage(connection)
-        const response = await this.dispatch(ty, data)
+        const response = await this.dispatch(connection, ty, data)
         await this.writeMessage(connection, {
             ty,
             data: response
         })
     }
 
-    async dispatch(ty: number, bytes: Uint8Array) {
+    async dispatch(connection: Connection, ty: number, bytes: Uint8Array) {
         const builder = new Builder()
         const buf = new ByteBuffer(bytes)
         switch (ty) {
@@ -80,7 +84,7 @@ class RPCServer {
                 await this.prepareConf(buf, builder)
                 break
             case RPC_HTTP_REQ_CALL:
-                await this.httpReqCall(buf, builder)
+                await this.httpReqCall(connection, buf, builder)
                 break
             default:
                 throw new Error(`JavaScript Plugin Runner: Failed to dispatch ty ${ty}, bytes: ${bytes.length}`)
@@ -104,7 +108,7 @@ class RPCServer {
         builder.finish(PrepareConfResponse.endResp(builder))
     }
 
-    async httpReqCall(buf: ByteBuffer, builder: Builder) {
+    async httpReqCall(connection: Connection, buf: ByteBuffer, builder: Builder) {
         const req = HTTPReqCallRequest.getRootAsReq(buf)
         const request = {
             id: req.id(),
@@ -112,7 +116,26 @@ class RPCServer {
             headers: new Map(),
             srcIp: [] as number[],
             method: this.getMethodName(req.method()),
-            args: new Map()
+            args: new Map(),
+            body: async () => {
+                const builder = new Builder()
+                const reqBody = ExtraInfoRequestBody.createReqBody(builder)
+                ExtraInfoRequest.startReq(builder)
+                ExtraInfoRequest.addInfoType(builder, ExtraInfoInfo.ReqBody)
+                ExtraInfoRequest.addInfo(builder, reqBody)
+                builder.finish(ExtraInfoRequest.endReq(builder))
+                await this.writeMessage(connection, {
+                    ty: RPC_EXTRA_INFO,
+                    data: builder.asUint8Array()
+                })
+                let { data } = await this.readMessage(connection)
+                let resp = ExtraInfoResponse.getRootAsResp(new ByteBuffer(data))
+                let resultArray = resp.resultArray()
+                if (!resultArray) {
+                    return ''
+                }
+                return new TextDecoder().decode(resultArray)
+            }
         }
         for (let i = 0; i < req.srcIpLength(); i++) {
             request.srcIp.push(req.srcIp(i))

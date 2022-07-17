@@ -75,18 +75,24 @@ async function init() {
             reject: (e: any) => void
         }[] = []
 
+        connCount++
+        let connId = connCount
+
         rpcServer.onConnection({
             read: async (size: number) => {
+                logger.debug(`[JavaScript]: Conn#${connId}: reading ${size} bytes`)
                 if (buf.byteLength >= size) {
+                    logger.debug(`[JavaScript]: Conn#${connId}: read ${size} bytes`)
                     return shift(size)
                 }
                 if (closed) {
-                    throw new Error('APISIX JavaScript Plugin Runner: connection closed')
+                    throw new Error('[JavaScript]: connection closed')
                 }
                 return new Promise((resolve, reject) => {
                     callbacks.push({
                         size,
                         resolve: () => {
+                            logger.debug(`[JavaScript]: Conn#${connId}: read ${size} bytes`)
                             resolve(shift(size))
                         },
                         reject,
@@ -99,12 +105,8 @@ async function init() {
             }
         })
 
-        logger.debug(`Client connected`)
-
-        connCount++
-        let connId = connCount
         conn.on('data', async (d: Buffer) => {
-            logger.debug(`Conn#${connId}: receive data: ${d.length} bytes`)
+            logger.debug(`[JavaScript]: Conn#${connId}: receive data: ${d.length} bytes`)
             buf = Buffer.concat([buf, d])
             let callback = callbacks[0]
             if (callback && buf.byteLength >= callback.size) {
@@ -120,7 +122,7 @@ async function init() {
         conn.on('error', (err) => {
             console.error(err)
             for (let callback of callbacks) {
-                callback.reject(new Error('APISIX JavaScript Plugin Runner: connection error'))
+                callback.reject(new Error('[JavaScript]: connection error'))
             }
         })
     })

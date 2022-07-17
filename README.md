@@ -21,7 +21,7 @@ Node.js / Deno Plugin Runner for APISIX (Alpha)
 | APISIX JavaScript Plugin Runner | Apache APISIX |
 | --- | --- |
 | main | v2.13.2+ |
-| v0.1.0 | v2.9 |
+| v0.1.0 | v2.7 |
 
 ### Installation
 
