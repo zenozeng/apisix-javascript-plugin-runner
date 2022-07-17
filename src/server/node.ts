@@ -56,6 +56,18 @@ async function init() {
     const server = net.createServer((conn) => {
 
         let buf = Buffer.alloc(0)
+        let closed = false
+
+        let shift = (size: number) => {
+            let part1 = Buffer.alloc(size)
+            let part2 = Buffer.alloc(buf.byteLength - size)
+            buf.copy(part1, 0, 0, size)
+            if (buf.byteLength - size > 0) {
+                buf.copy(part2, 0, size, buf.byteLength)
+            }
+            buf = part2
+            return part1
+        }
 
         let callbacks: {
             size: number,
@@ -65,17 +77,17 @@ async function init() {
 
         rpcServer.onConnection({
             read: async (size: number) => {
+                if (buf.byteLength >= size) {
+                    return shift(size)
+                }
+                if (closed) {
+                    throw new Error('APISIX JavaScript Plugin Runner: connection closed')
+                }
                 return new Promise((resolve, reject) => {
                     callbacks.push({
                         size,
                         resolve: () => {
-                            let part1 = Buffer.alloc(size)
-                            let part2 = Buffer.alloc(buf.byteLength - size)
-                            buf.copy(part1, 0, 0, size)
-                            if (buf.byteLength - size > 0) {
-                                buf.copy(part2, 0, size, buf.byteLength)
-                            }
-                            resolve(part1)
+                            resolve(shift(size))
                         },
                         reject,
                     })
@@ -95,16 +107,14 @@ async function init() {
             logger.debug(`Conn#${connId}: receive data: ${d.length} bytes`)
             buf = Buffer.concat([buf, d])
             let callback = callbacks[0]
-            if (callback && buf.byteLength > callback.size) {
+            if (callback && buf.byteLength >= callback.size) {
                 callbacks.shift()
                 callback.resolve()
             }
         })
 
         conn.on('close', () => {
-            for (let callback of callbacks) {
-                callback.reject(new Error('APISIX JavaScript Plugin Runner: connection closed'))
-            }
+            closed = true
         })
 
         conn.on('error', (err) => {
