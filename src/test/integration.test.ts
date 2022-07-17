@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { describe, it, expect } from '@jest/globals'
+import { describe, it, expect, fit } from '@jest/globals'
 import fetch from 'node-fetch'
 import * as fs from 'fs'
 import * as crypto from 'crypto'

@@ -102,6 +102,9 @@ async function init() {
             },
             write: async (data: Uint8Array) => {
                 return conn.write(data)
+            },
+            closed: () => {
+                return closed
             }
         })
 

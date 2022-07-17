@@ -39,6 +39,7 @@ const HEADER_LEN = 4
 interface Connection {
     read: (size: number) => Promise<Uint8Array>
     write: (data: Uint8Array) => Promise<boolean>
+    closed: () => boolean
 }
 
 class RPCServer {
@@ -47,7 +48,6 @@ class RPCServer {
 
     constructor(runner: Runner) {
         this.runner = runner
-
     }
 
     async readMessage(connection: Connection) {
@@ -68,12 +68,14 @@ class RPCServer {
     }
 
     async onConnection(connection: Connection) {
-        const { ty, data } = await this.readMessage(connection)
-        const response = await this.dispatch(connection, ty, data)
-        await this.writeMessage(connection, {
-            ty,
-            data: response
-        })
+        while (!connection.closed()) {
+            const { ty, data } = await this.readMessage(connection)
+            const response = await this.dispatch(connection, ty, data)
+            await this.writeMessage(connection, {
+                ty,
+                data: response
+            })
+        }
     }
 
     async dispatch(connection: Connection, ty: number, bytes: Uint8Array) {
