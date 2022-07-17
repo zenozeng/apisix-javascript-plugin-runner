@@ -12,7 +12,7 @@ dev:
 
 .PHONY: test
 test:
-	bash test/test.sh
+	bash -e test/test.sh
 
 .PHONY: coverage
 coverage:

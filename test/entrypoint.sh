@@ -13,6 +13,8 @@ while ! nc -z 127.0.0.1 9080; do
 done
 
 pushd /usr/local/apisix/javascript-plugin-runner
+set -e
+
 npm test
 
 popd

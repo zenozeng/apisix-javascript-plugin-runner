@@ -150,7 +150,6 @@ class RPCServer {
         const { isStop, response } = await this.runner.httpReqCall(confToken, request)
         let action = isStop ? this.createStop(builder, response) : this.createRewrite(builder, request)
         let actionType = isStop ? Action.Stop : Action.Rewrite
-        console.debug({ isStop, response })
         HTTPReqCallResponse.startResp(builder)
         HTTPReqCallResponse.addId(builder, request.id)
         HTTPReqCallResponse.addAction(builder, action)
