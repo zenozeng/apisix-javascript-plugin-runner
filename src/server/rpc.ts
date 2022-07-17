@@ -28,6 +28,14 @@ import { TextEntry } from '../ext-plugin-proto/typescript/ext-plugin.js'
 const RPC_ERROR = 0
 const RPC_PREPARE_CONF = 1
 const RPC_HTTP_REQ_CALL = 2
+const RPC_EXTRA_INFO = 3
+
+const HEADER_LEN = 4
+
+interface Connection {
+    read: (size: number) => Promise<Uint8Array>
+    write: (data: Uint8Array) => Promise<boolean>
+}
 
 class RPCServer {
 
@@ -35,6 +43,33 @@ class RPCServer {
 
     constructor(runner: Runner) {
         this.runner = runner
+
+    }
+
+    async readMessage(connection: Connection) {
+        const buf = await connection.read(HEADER_LEN)
+        const ty = buf[0]
+        const dataLength = Buffer.from([0, buf[1], buf[2], buf[3]]).readInt32BE()
+        const data = await connection.read(dataLength)
+        return { ty, data }
+    }
+
+    async writeMessage(connection: Connection, { ty, data }: { ty: number, data: Uint8Array }) {
+        const respSize = data.length
+        const header = Buffer.alloc(HEADER_LEN)
+        header.writeUInt32BE(respSize, 0)
+        header[0] = ty
+        connection.write(header)
+        connection.write(data)
+    }
+
+    async onConnection(connection: Connection) {
+        const { ty, data } = await this.readMessage(connection)
+        const response = await this.dispatch(ty, data)
+        await this.writeMessage(connection, {
+            ty,
+            data: response
+        })
     }
 
     async dispatch(ty: number, bytes: Uint8Array) {
@@ -60,7 +95,7 @@ class RPCServer {
             const conf = req.conf(i)
             const name = conf.name()
             const value = conf.value()
-            list.push({name, value})
+            list.push({ name, value })
         }
         const confToken = this.runner.prepareConf(req.key(), list)
         PrepareConfResponse.startResp(builder)
@@ -89,10 +124,10 @@ class RPCServer {
             request.args.set(req.args(i).name(), req.args(i).value())
         }
         const confToken = req.confToken()
-        const {isStop, response} = await this.runner.httpReqCall(confToken, request)
+        const { isStop, response } = await this.runner.httpReqCall(confToken, request)
         let action = isStop ? this.createStop(builder, response) : this.createRewrite(builder, request)
         let actionType = isStop ? Action.Stop : Action.Rewrite
-        console.debug({isStop, response})
+        console.debug({ isStop, response })
         HTTPReqCallResponse.startResp(builder)
         HTTPReqCallResponse.addId(builder, request.id)
         HTTPReqCallResponse.addAction(builder, action)
@@ -135,7 +170,7 @@ class RPCServer {
         return Rewrite.endRewrite(builder)
     }
 
-    protected mapToTextEntries(builder: Builder, m: {keys(): Iterable<string>, get(k: string): string}) {
+    protected mapToTextEntries(builder: Builder, m: { keys(): Iterable<string>, get(k: string): string }) {
         const textEntries = []
         if (m) {
             for (let k of m.keys()) {
